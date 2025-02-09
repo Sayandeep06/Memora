@@ -1,10 +1,11 @@
 
-import express from "express";
+import express, {Request, Response} from "express";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken"
-import { contentModel, Tag, UserModel } from "./db";
+import { contentModel, Link, Tag, UserModel } from "./db";
 import { JWT_PASSWORD } from "./config";
 import { userMiddleware } from "./middleware";
+import { random } from "./utils";
 //jwt.generate()
 const app = express();
 app.use(express.json())
@@ -101,12 +102,54 @@ app.delete("/api/v1/content", userMiddleware, async (req,res)=>{
 
 })
 
-app.post("/api/v1/brain/share", (req, res)=>{
-    
+app.post("/api/v1/brain/share", userMiddleware, async(req, res)=>{
+    const share = req.body.share;
+    const hash = random(10)
+    if(share){
+        await Link.create({
+            //@ts-ignore
+            userId: req.userId,
+            hash: hash
+        })
+        res.json({
+            hash: hash
+        })
+    }else {
+        await Link.deleteOne({
+            //@ts-ignore
+            userId: req.userId
+        })
+        res.json({
+            message: "Removed sharable link"
+        })
+    }
+
 })
 
-app.get("/api/v1/brain/:shareLink", (req, res)=>{
-    
+app.get("/api/v1/brain/:shareLink", async (req, res)=>{
+    const hash = req.params.shareLink
+    const link = await Link.findOne({
+        hash: hash
+    });
+    if(!link){
+        res.status(411).json({
+            message: "Incorrect hash input"
+        })
+        return;
+    }
+    const content = await contentModel.find({
+        userId: link.userId
+    })
+    const user = await UserModel.findOne({
+        _id: link.userId.toString()
+    })
+    res.json({
+        //@ts-ignore
+        username: user?.username,
+        content: content
+    })
 })
 
-app.listen(3000);
+app.listen(3000, ()=>{
+    console.log("Listening on:  http://localhost:3000/")
+});

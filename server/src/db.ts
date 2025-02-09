@@ -10,9 +10,9 @@ const userSchema = new mongoose.Schema({
 const contentTypes = ['image', 'video', 'article', 'audio']
 
 const contentSchema = new mongoose.Schema({
-    link: {type: String, require: true},
+    link: {type: String, required: true},
     type: {type: String, enum: contentTypes , required: true},
-    title: {type: String, require: true},
+    title: {type: String, required: true},
     tags: [{type: mongoose.Types.ObjectId, ref: 'Tag'}],
     userId: {type: mongoose.Types.ObjectId, ref: 'User', required: true}
 })
